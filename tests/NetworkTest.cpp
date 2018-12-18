@@ -25,6 +25,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NetworkTest);
 using namespace Util::Network;
 
 void NetworkTest::testTCP() {
+	Util::Network::init();
 	uint_fast8_t tryCount;
 
 	tryCount = 0;
