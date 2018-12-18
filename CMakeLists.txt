@@ -96,6 +96,7 @@ endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	target_link_libraries(Util PRIVATE rt)
 endif()
+set(EXTERNAL_LIBRARIES "")
 
 # Dependency to SQLite3
 find_package(SQLite3)
@@ -164,8 +165,29 @@ endif()
 
 ## Dependency to SDL2
 include(FetchSDL2)
+if(SDL2_FOUND)
+	target_compile_definitions(Util PRIVATE UTIL_HAVE_LIB_SDL2)
+	target_include_directories(Util PRIVATE ${SDL2_INCLUDE_DIRS})
+	target_link_libraries(Util PRIVATE ${SDL2_LIBRARIES})
+	set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${SDL2_LIBRARIES})
+endif()
+
 include(FetchSDL2Net)
+if(SDL2_NET_FOUND)
+	target_compile_definitions(Util PRIVATE UTIL_HAVE_LIB_SDL2_NET)
+	target_include_directories(Util PRIVATE ${SDL2_NET_INCLUDE_DIRS})
+	target_link_libraries(Util PRIVATE ${SDL2_NET_LIBRARIES})
+	set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${SDL2_NET_LIBRARIES})
+endif()
+
+## Dependency to SDL2 image
 include(FetchSDL2Image)
+if(SDL2_IMAGE_FOUND)
+	target_compile_definitions(Util PRIVATE UTIL_HAVE_LIB_SDL2_IMAGE)
+	target_include_directories(Util PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
+	target_link_libraries(Util PRIVATE ${SDL2_IMAGE_LIBRARIES})
+	set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+endif()
 
 # Dependency to pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -206,8 +228,7 @@ if(UTIL_HAVE_OPEN_MEMSTREAM)
 endif()
 
 # Set version of library
-set_target_properties(Util PROPERTIES VERSION ${Util_VERSION}
-                                      SOVERSION ${Util_VERSION_MAJOR})
+set_target_properties(Util PROPERTIES VERSION ${Util_VERSION} SOVERSION ${Util_VERSION_MAJOR})
 
 include(FeatureSummary)
 set_package_properties(CURL PROPERTIES
@@ -310,12 +331,18 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/UtilConfigVersion.c
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/UtilConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/UtilConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_CMAKECONFIGDIR} COMPONENT developmentlibraries)
 
+				
+if(WIN32)
+	# copy dlls to build dir
+	add_custom_command(TARGET Util PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${EXTERNAL_LIBRARIES} $<TARGET_FILE_DIR:Util>)
+endif()
+
 # Packaging
 include(InstallRequiredSystemLibraries)
 
 set(CPACK_PACKAGE_NAME "libutil${Util_VERSION_MAJOR}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Util library")
-set(CPACK_PACKAGE_VENDOR "Benjamin Eikel; Claudius Jaehn; Ralf Petring")
+set(CPACK_PACKAGE_VENDOR "Benjamin Eikel; Claudius Jaehn; Ralf Petring; Sascha Brandt")
 set(CPACK_PACKAGE_CONTACT "Benjamin Eikel <benjamin@eikel.org>")
 set(CPACK_PACKAGE_VERSION_MAJOR ${Util_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${Util_VERSION_MINOR})
